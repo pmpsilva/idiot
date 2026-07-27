@@ -10,23 +10,25 @@ import (
 )
 
 var (
-	flagUUID      = flag.Bool("uuid", false, "Generate a UUID v4")
-	flagULID      = flag.Bool("ulid", false, "Generate a ULID")
-	flagPrefix    = flag.String("prefix", "", "Prefix to prepend when generating ULIDs")
-	flagLuhn      = flag.String("luhn", "", "Calculate Luhn check digit and append it to the provided number (digits only)")
-	flagCD        = flag.String("cd", "", "Alias for -luhn")
-	flagValidate  = flag.String("validate", "", "Validate provided number (digits only) using Luhn algorithm")
-	flagCDV       = flag.String("cdv", "", "Alias for -validate")
-	flagPass      = flag.Bool("pass", false, "Generate a random password")
-	flagPassShort = flag.Bool("p", false, "Alias for -pass")
-	flagPassLen   = flag.Int("l", 12, "Password length")
-	flagPassChars = flag.Bool("c", true, "Include letters in password generation")
-	flagPassDigits = flag.Bool("d", true, "Include digits in password generation")
+	flagUUID        = flag.Bool("uuid", false, "Generate a UUID v4")
+	flagULID        = flag.Bool("ulid", false, "Generate a ULID")
+	flagPrefix      = flag.String("prefix", "", "Prefix to prepend when generating ULIDs, or leading digits when generating an EID")
+	flagLuhn        = flag.String("luhn", "", "Calculate Luhn check digit and append it to the provided number (digits only)")
+	flagCD          = flag.String("cd", "", "Alias for -luhn")
+	flagValidate    = flag.String("validate", "", "Validate provided number (digits only) using Luhn algorithm")
+	flagCDV         = flag.String("cdv", "", "Alias for -validate")
+	flagEID         = flag.String("eid", "", "Validate a telco EID (32 digits) using GSMA SGP.02 check digits")
+	flagNewEID      = flag.Bool("neweid", false, "Generate a random test EID with valid check digits (not a real, provisionable EID)")
+	flagPass        = flag.Bool("pass", false, "Generate a random password")
+	flagPassShort   = flag.Bool("p", false, "Alias for -pass")
+	flagPassLen     = flag.Int("l", 12, "Password length")
+	flagPassChars   = flag.Bool("c", true, "Include letters in password generation")
+	flagPassDigits  = flag.Bool("d", true, "Include digits in password generation")
 	flagPassSpecial = flag.Bool("s", true, "Include special characters in password generation")
-	flagHelp      = flag.Bool("h", false, "Show help")
-	flagHelpLong  = flag.Bool("help", false, "Show help")
-	errNoAction   = errors.New("no action specified; use -h for help")
-	errConflicted = errors.New("multiple actions requested; choose one")
+	flagHelp        = flag.Bool("h", false, "Show help")
+	flagHelpLong    = flag.Bool("help", false, "Show help")
+	errNoAction     = errors.New("no action specified; use -h for help")
+	errConflicted   = errors.New("multiple actions requested; choose one")
 )
 
 func main() {
@@ -55,6 +57,12 @@ func main() {
 		actions++
 	}
 	if *flagCDV != "" {
+		actions++
+	}
+	if *flagEID != "" {
+		actions++
+	}
+	if *flagNewEID {
 		actions++
 	}
 	if *flagPass || *flagPassShort {
@@ -91,6 +99,18 @@ func main() {
 		} else {
 			fmt.Println("invalid")
 		}
+	case *flagEID != "":
+		if validateEID(*flagEID) {
+			fmt.Printf("valid (check digits: %s)\n", (*flagEID)[30:])
+		} else {
+			fmt.Println("invalid")
+		}
+	case *flagNewEID:
+		eid, err := generateEID(*flagPrefix)
+		if err != nil {
+			exitWith(err)
+		}
+		fmt.Println(eid)
 	case *flagPass || *flagPassShort:
 		password, err := generatePassword(*flagPassLen, *flagPassChars, *flagPassDigits, *flagPassSpecial)
 		if err != nil {
@@ -110,6 +130,8 @@ Usage:
   idiot -cd NUMBER                 Alias for -luhn
   idiot -validate NUMBER           Validate NUMBER using Luhn
   idiot -cdv NUMBER                Alias for -validate
+  idiot -eid EID                   Validate a telco EID (32 digits, GSMA SGP.02)
+  idiot -neweid [-prefix DIGITS]   Generate a random test EID (not a real, provisionable EID)
   idiot -pass | -p [-l LEN -c=true -d=true -s=true]
                                     Generate random password (default length 12, include letters, digits, and special characters)
   idiot -h | --help                Show this help
