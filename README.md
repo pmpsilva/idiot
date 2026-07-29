@@ -170,6 +170,27 @@ idiot -pass -l 8 -c=false
 
 ---
 
+### IMSI — nibble-swap
+
+Convert a 15-digit IMSI to its telco nibble-swapped form (18 digits), or reverse the operation. Auto-detects direction from input length. The transform mirrors the `getImsiCompleteAndSwapped` / `nibbleSwap` helpers used in the telco Java services.
+
+**Forward** (15 → 18 digits): prepend `"9"`, swap each adjacent pair of digits, prepend `"08"`.  
+**Reverse** (18 → 15 digits): strip `"08"`, swap each adjacent pair of digits, strip leading `"9"`.
+
+```sh
+idiot -swimsi 204040000358618
+# 082940400000536881
+
+idiot -swimsi 082940400000536881
+# 204040000358618
+```
+
+| Flag | Description |
+|------|-------------|
+| `-swimsi VALUE` | 15-digit IMSI → 18-digit swapped form, or 18-digit swapped form → original IMSI |
+
+---
+
 ### Help
 
 ```sh

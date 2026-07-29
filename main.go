@@ -25,6 +25,7 @@ var (
 	flagPassChars   = flag.Bool("c", true, "Include letters in password generation")
 	flagPassDigits  = flag.Bool("d", true, "Include digits in password generation")
 	flagPassSpecial = flag.Bool("s", true, "Include special characters in password generation")
+	flagSwimsi      = flag.String("swimsi", "", "Nibble-swap an IMSI (15 digits → 18 digits) or reverse it (18 digits → 15 digits)")
 	flagHelp        = flag.Bool("h", false, "Show help")
 	flagHelpLong    = flag.Bool("help", false, "Show help")
 	errNoAction     = errors.New("no action specified; use -h for help")
@@ -66,6 +67,9 @@ func main() {
 		actions++
 	}
 	if *flagPass || *flagPassShort {
+		actions++
+	}
+	if *flagSwimsi != "" {
 		actions++
 	}
 
@@ -117,6 +121,12 @@ func main() {
 			exitWith(err)
 		}
 		fmt.Println(password)
+	case *flagSwimsi != "":
+		result, err := swimsi(*flagSwimsi)
+		if err != nil {
+			exitWith(err)
+		}
+		fmt.Println(result)
 	}
 }
 
@@ -134,6 +144,7 @@ Usage:
   idiot -neweid [-prefix DIGITS]   Generate a random test EID (not a real, provisionable EID)
   idiot -pass | -p [-l LEN -c=true -d=true -s=true]
                                     Generate random password (default length 12, include letters, digits, and special characters)
+  idiot -swimsi IMSI               Nibble-swap IMSI (15 digits → 18 digits, or 18 digits → 15 digits)
   idiot -h | --help                Show this help
 `)
 }
